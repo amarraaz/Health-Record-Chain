@@ -1,0 +1,115 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+rule p2dDoctorCanOnlyReadDoctor {
+  	description: ""
+    participant: "org.healthrecordchain.Doctor"
+    operation: CREATE, DELETE, UPDATE
+    resource: "org.healthrecordchain.Doctor"
+    action: DENY
+}
+
+rule p2cDoctorCanOnlyReadAuthorizedPatients {
+  	description: ""
+    participant: "org.healthrecordchain.Doctor"
+    operation: CREATE, DELETE, UPDATE
+    resource: "org.healthrecordchain.Patient"
+    action: DENY
+}
+
+rule p2cDoctorCanAccessOnlyAuthorizedPatients {
+  	description: ""
+    participant(m): "org.healthrecordchain.Doctor"
+    operation: ALL
+    resource(v): "org.healthrecordchain.Patient"
+  	condition: ( v.authorizedDoctors.indexOf(m.email) < 0 )
+    action: DENY
+}
+
+rule p2bPatientCanReadDoctorsProfile {
+  	description: ""
+    participant: "org.healthrecordchain.Patient"
+    operation: CREATE, UPDATE, DELETE
+    resource: "org.healthrecordchain.Doctor"
+    action: DENY
+}
+
+rule p2aPatientCanNotEditAuthorizedDoctors {
+  	description: ""
+    participant: "org.healthrecordchain.Patient"
+    operation: UPDATE
+    resource: "org.healthrecordchain.Patient"
+    action: DENY
+}
+
+rule p2aPatientCanReadOnlyTheirProfile {
+  	description: ""
+    participant(m): "org.healthrecordchain.Patient"
+    operation: ALL
+    resource(v): "org.healthrecordchain.Patient"
+  	condition: (v.getIdentifier() != m.getIdentifier())
+    action: DENY
+}
+
+rule p1PatientCanOnlyReadTheirAsset {
+  	description: "Patients Can only read the assets."
+    participant(m): "org.healthrecordchain.Patient"
+    operation: CREATE, UPDATE, DELETE
+    resource(v): "org.healthrecordchain.MedicalRecord"
+  	condition: (v.owner.getIdentifier() == m.getIdentifier())
+    action: DENY
+}
+
+rule p1OnlyOwnerPatientCanAccessAssetNotDoctor {
+  	description: "Patients Can only read the assets."
+    participant(m): "org.healthrecordchain.Patient"
+    operation: ALL
+    resource(v): "org.healthrecordchain.MedicalRecord"
+  	condition: (v.owner.getIdentifier() != m.getIdentifier())
+    action: DENY
+}
+
+rule DoctorCanAccessOnlyAuthorized {
+  	description: ""
+    participant(m): "org.healthrecordchain.Doctor"
+    operation: ALL
+    resource(v): "org.healthrecordchain.MedicalRecord"
+  	condition: ( v.owner.authorizedDoctors.indexOf(m.email) < 0 )
+    action: DENY
+}
+
+rule Default {
+    description: "Grant business network users full access to user resources"
+    participant: "org.hyperledger.composer.system.Participant"
+    operation: ALL
+    resource: "**"
+    action: ALLOW
+}
+
+rule NetworkAdminUser {
+    description: "Grant business network administrators full access to user resources"
+    participant: "org.hyperledger.composer.system.NetworkAdmin"
+    operation: ALL
+    resource: "**"
+    action: ALLOW
+}
+
+rule NetworkAdminSystem {
+    description: "Grant business network administrators full access to system resources"
+    participant: "org.hyperledger.composer.system.NetworkAdmin"
+    operation: ALL
+    resource: "org.hyperledger.composer.system.**"
+    action: ALLOW
+}
+
